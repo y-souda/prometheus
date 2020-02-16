@@ -1,0 +1,125 @@
+version: '2.4'
+services:
+  prometheus:
+    image: prom/prometheus:latest
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    restart: always
+    ports:
+      - 127.0.0.1:19090:9090
+    volumes:
+      - data-prometheus:/prometheus
+      - ./prometheus:/etc/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=http://${HOSTNAME}:8080/prometheus/'
+      - '--web.route-prefix=/prometheus'
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    networks:
+      - network
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    restart: always
+    ports:
+      - 127.0.0.1:19093:9093
+    volumes:
+      - ./alertmanager/alertmanager.yml:/prometheus/alertmanager.yml
+      - data-prometheus:/data
+    command:
+      - '--cluster.advertise-address=0.0.0.0:9093'
+      - '--config.file=/prometheus/alertmanager.yml'
+      - '--storage.path=/data'
+      - '--web.external-url=http://${HOSTNAME}:8080/alertmanager/'
+      - '--web.route-prefix=/alertmanager'
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    networks:
+      - network
+
+  nginx:
+    image: nginx:1.17.6
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    restart: always
+    environment:
+     - NGINX_HOST=${HOSTNAME}
+     - NGINX_PORT=8080
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d
+    command: /bin/bash -c "envsubst '$$NGINX_HOST$$NGINX_PORT' < /etc/nginx/conf.d/reverse_proxy.template > /etc/nginx/conf.d/reverse_proxy.conf && cat /etc/nginx/conf.d/reverse_proxy.conf &&exec nginx -g 'daemon off;'"
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    network_mode: "host"
+
+  grafana:
+    image: grafana/grafana:6.6.0
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    volumes:
+      - data-grafana:/var/lib/grafana
+    ports:
+      - 127.0.0.1:3000:3000
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    networks:
+      - network
+
+  loki:
+    image: grafana/loki:latest
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    command: -config.file=/etc/loki/local-config.yaml
+    volumes:
+      - data-loki:/tmp/loki
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    networks:
+      - network
+ 
+  promtail:
+    image: grafana/promtail:latest
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 1
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: "127.0.0.1:4000"
+        tag: "docker"
+    ports:
+      - 127.0.0.1:2514:1514
+    volumes:
+      - /var/log:/var/log
+      - ./promtail/promtail-syslogconfig.yaml:/etc/promtail/promtail-syslogconfig.yaml
+    command: -config.file=/etc/promtail/promtail-syslogconfig.yaml
+    networks:
+      - network
+
+volumes:
+  data-grafana:
+    driver: local
+  data-prometheus:
+    driver: local
+  data-loki:
+    driver: local
+
+networks:
+  network:

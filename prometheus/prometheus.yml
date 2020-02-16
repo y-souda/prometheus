@@ -1,0 +1,41 @@
+scrape_configs:
+  - job_name: 'windev'
+    scrape_interval: 3m
+    metrics_path: /probe
+    params:
+      module: [icmp]
+    file_sd_configs:
+      - files:
+        - /etc/prometheus/win.yml
+        refresh_interval: 5m
+    relabel_configs:
+      - source_labels: [__address__]
+        target_label: __param_target
+      - source_labels: [__param_target]
+        target_label: ip
+  - job_name: 'ssh'
+    metrics_path: /probe
+    params:
+      module: [ssh_banner]
+    static_configs:
+      - targets:
+        - 192.168.0.221
+    relabel_configs:
+      # Ensure port is 22, pass as URL parameter
+      - source_labels: [__address__]
+        regex: (.*)(:.*)?
+        replacement: ${1}:22
+        target_label: __param_target
+      # Make instance label the target
+      - source_labels: [__param_target]
+        target_label: instance
+      # Actually talk to the blackbox exporter though
+      - target_label: __address__
+        replacement: 192.168.0.221:9115
+alerting:
+  alertmanagers:
+  - static_configs:
+    - targets:
+      - alertmanager:9093
+rule_files:
+   - "/etc/prometheus/alert.rules"

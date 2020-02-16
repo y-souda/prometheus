@@ -1,0 +1,14 @@
+groups:
+- name: probe
+  rules:
+
+  # Alert for any instance that is unreachable for >180 minutes.
+  - alert: "probe down"
+    expr: probe_success == 0
+    for: 180m
+    labels:
+      severity: "5"
+      location: "{{ $labels.exporter }}"
+    annotations:
+      summary: "Instance {{ $labels.instance }} Down"
+      description: "{{ $labels.instance }} (job: {{ $labels.job }}, pop: {{ $labels.pop }}) has been down for 3h over."
