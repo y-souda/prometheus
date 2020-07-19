@@ -47,7 +47,7 @@ services:
       - network
 
   nginx:
-    image: nginx:1.17.6
+    image: nginx:1.17.9
     sysctls:
       net.ipv6.conf.all.disable_ipv6: 1
     restart: always
@@ -65,7 +65,7 @@ services:
     network_mode: "host"
 
   grafana:
-    image: grafana/grafana:6.6.0
+    image: grafana/grafana:latest
     sysctls:
       net.ipv6.conf.all.disable_ipv6: 1
     volumes:
