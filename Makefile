@@ -9,6 +9,7 @@ start:
 	@/usr/local/bin/docker-compose ps                  
 restart:
 	@/usr/local/bin/docker-compose up -d --force-recreate
+	@/usr/local/bin/docker-compose ps
 upgrade:
 	@/usr/local/bin/docker-compose pull
 	@/usr/local/bin/docker-compose up -d --force-recreate
