@@ -8,17 +8,12 @@ services:
     ports:
       - 127.0.0.1:19090:9090
     volumes:
-      - data-prometheus:/prometheus
+      - data-prometheus:/etc/prometheus/data
       - ./prometheus:/etc/prometheus
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.external-url=http://${HOSTNAME}:8080/prometheus/'
       - '--web.route-prefix=/prometheus'
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     networks:
       - network
 
@@ -38,11 +33,6 @@ services:
       - '--storage.path=/data'
       - '--web.external-url=http://${HOSTNAME}:8080/alertmanager/'
       - '--web.route-prefix=/alertmanager'
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     networks:
       - network
 
@@ -57,11 +47,6 @@ services:
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d
     command: /bin/bash -c "envsubst '$$NGINX_HOST$$NGINX_PORT' < /etc/nginx/conf.d/reverse_proxy.template > /etc/nginx/conf.d/reverse_proxy.conf && cat /etc/nginx/conf.d/reverse_proxy.conf &&exec nginx -g 'daemon off;'"
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     network_mode: "host"
 
   grafana:
@@ -72,11 +57,6 @@ services:
       - data-grafana:/var/lib/grafana
     ports:
       - 127.0.0.1:3000:3000
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     networks:
       - network
 
@@ -87,11 +67,6 @@ services:
     command: -config.file=/etc/loki/local-config.yaml
     volumes:
       - data-loki:/tmp/loki
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     networks:
       - network
  
@@ -99,11 +74,6 @@ services:
     image: grafana/promtail:latest
     sysctls:
       net.ipv6.conf.all.disable_ipv6: 1
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: "127.0.0.1:4000"
-        tag: "docker"
     ports:
       - 127.0.0.1:2514:1514
     volumes:
