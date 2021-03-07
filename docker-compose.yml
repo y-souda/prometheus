@@ -63,6 +63,7 @@ services:
 
   loki:
     image: grafana/loki:latest
+    restart: always
     sysctls:
       net.ipv6.conf.all.disable_ipv6: 1
     command: -config.file=/etc/loki/local-config.yaml
@@ -73,6 +74,7 @@ services:
  
   promtail:
     image: grafana/promtail:latest
+    restart: always
     sysctls:
       net.ipv6.conf.all.disable_ipv6: 1
     ports:
